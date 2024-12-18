@@ -1,0 +1,88 @@
+/* eslint-disable react-hooks/rules-of-hooks */
+/* eslint-disable react/jsx-key */
+import React, { useEffect, useState } from 'react'
+import './adminUser.css'
+import Layout from '../Utils/Layout'
+import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
+import { server } from '../../main'
+import toast from 'react-hot-toast'
+
+
+function AdminUsers({ user }) {
+    const navigate = useNavigate();
+
+    if (user && user.role !== "admin") return navigate("/")
+
+    const [users, setUsers] = useState([])
+
+    async function fetchUsers() {
+        try {
+            const { data } = await axios.get(`${server}/api/admin/users`, {
+                headers: {
+                    token: localStorage.getItem("token"),
+                },
+            });
+
+            setUsers(data.users);
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    useEffect(() => {
+        fetchUsers()
+    }, [])
+
+    const updateRole = async (id) => {
+        if (confirm("Are you sure you want to update this user role"))
+            try {
+                const { data } = await axios.put(`${server}/api/admin/user/${id}`, {}, {
+                    headers: {
+                        token: localStorage.getItem("token"),
+                    },
+                });
+                toast.success("User role updated successfully")
+                fetchUsers();
+            } catch (error) {
+                toast.error(error.response.data.message);
+                console.log(error);
+            }
+    }
+
+    return (
+        <Layout>
+            <div className='users'>
+                <h1>All Users</h1>
+                <table border={"black"}>
+                    <thead>
+                        <tr>
+                            <td>#</td>
+                            <td>name</td>
+                            <td>email</td>
+                            <td>role</td>
+                            <td>update role</td>
+                        </tr>
+                    </thead>
+                    {
+                        users && users.map((e, i) => (
+                            <tbody>
+                                <tr>
+                                    <td>{i + 1}</td>
+                                    <td>{e.name}</td>
+                                    <td>{e.email}</td>
+                                    <td>{e.role}</td>
+                                    <td>
+                                        <button onClick={() => updateRole(e._id)} className="common-btn">Update Role</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        ))
+                    }
+                </table>
+            </div>
+        </Layout>
+    )
+}
+
+export default AdminUsers
